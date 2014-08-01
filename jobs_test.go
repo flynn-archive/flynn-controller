@@ -8,7 +8,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"sort"
 	"strings"
 
 	tu "github.com/flynn/flynn-controller/testutils"
@@ -52,8 +51,7 @@ type fakeLog struct {
 	io.Reader
 }
 
-func (l *fakeLog) Close() error      { return nil }
-func (l *fakeLog) CloseWrite() error { return nil }
+func (l *fakeLog) Close() error { return nil }
 func (l *fakeLog) Write([]byte) (int, error) {
 	return 0, io.ErrUnexpectedEOF
 }
@@ -74,7 +72,7 @@ func (s *S) createLogTestApp(c *C, name string, stream io.Reader) (*ct.App, stri
 	app := s.createTestApp(c, &ct.App{Name: name})
 	hostID, jobID := utils.UUID(), utils.UUID()
 	hc := tu.NewFakeHostClient(hostID)
-	hc.SetAttach(jobID, newFakeLog(stream))
+	hc.SetAttach(jobID, cluster.NewAttachClient(newFakeLog(stream)))
 	s.cc.SetHostClient(hostID, hc)
 	return app, hostID, jobID
 }
@@ -116,7 +114,7 @@ func (s *S) TestJobLogTail(c *C) {
 }
 
 func (s *S) TestJobLogSSE(c *C) {
-	logData, err := base64.StdEncoding.DecodeString("AQAAAAAAABNMaXN0ZW5pbmcgb24gNTUwMDcKAQAAAAAAAA1oZWxsbyBzdGRvdXQKAgAAAAAAAA1oZWxsbyBzdGRlcnIK")
+	logData, err := base64.StdEncoding.DecodeString("AwIAAAANaGVsbG8gc3RkZXJyCgMBAAAADWhlbGxvIHN0ZG91dAoDAQAAABNMaXN0ZW5pbmcgb24gNTUwMTIK")
 	c.Assert(err, IsNil)
 	app, hostID, jobID := s.createLogTestApp(c, "joblog-sse", bytes.NewReader(logData))
 
@@ -132,7 +130,7 @@ func (s *S) TestJobLogSSE(c *C) {
 	res.Body.Close()
 	c.Assert(err, IsNil)
 
-	expected := "data: {\"stream\":\"stdout\",\"data\":\"Listening on 55007\\n\"}\n\ndata: {\"stream\":\"stdout\",\"data\":\"hello stdout\\n\"}\n\ndata: {\"stream\":\"stderr\",\"data\":\"hello stderr\\n\"}\n\nevent: eof\ndata: {}\n\n"
+	expected := "data: {\"stream\":\"stderr\",\"data\":\"hello stderr\\n\"}\n\ndata: {\"stream\":\"stdout\",\"data\":\"hello stdout\\n\"}\n\ndata: {\"stream\":\"stdout\",\"data\":\"Listening on 55012\\n\"}\n\nevent: eof\ndata: {}\n\n"
 
 	c.Assert(buf.String(), Equals, expected)
 }
@@ -150,23 +148,15 @@ func (s *S) TestJobLogSSEStream(c *C) {
 	c.Assert(err, IsNil)
 	defer res.Body.Close()
 
-	go pipeW.Write([]byte("\x01\x00\x00\x00\x00\x00\x00\x13Listening on 55007\n"))
+	go pipeW.Write([]byte("\x03\x01\x00\x00\x00\x13Listening on 55012\n"))
 	buf := make([]byte, 64)
 	n, err := res.Body.Read(buf)
 	c.Assert(err, IsNil)
 	buf = buf[:n]
 
-	expected := "data: {\"stream\":\"stdout\",\"data\":\"Listening on 55007\\n\"}\n\n"
+	expected := "data: {\"stream\":\"stdout\",\"data\":\"Listening on 55012\\n\"}\n\n"
 	c.Assert(string(buf), Equals, expected)
 }
-
-type fakeAttachStream struct {
-	io.Reader
-	io.WriteCloser
-}
-
-func (l *fakeAttachStream) CloseWrite() error { return l.WriteCloser.Close() }
-func (l *fakeAttachStream) Close() error      { return l.CloseWrite() }
 
 func (s *S) TestRunJobDetached(c *C) {
 	app := s.createTestApp(c, &ct.App{Name: "run-detached"})
@@ -196,18 +186,13 @@ func (s *S) TestRunJobDetached(c *C) {
 
 	job := s.cc.GetHost(hostID).Jobs[0]
 	c.Assert(res.ID, Equals, hostID+"-"+job.ID)
-	c.Assert(job.Attributes, DeepEquals, map[string]string{
+	c.Assert(job.Metadata, DeepEquals, map[string]string{
 		"flynn-controller.app":     app.ID,
 		"flynn-controller.release": release.ID,
 	})
 	c.Assert(job.Config.Cmd, DeepEquals, []string{"foo", "bar"})
-	sort.Strings(job.Config.Env)
-	c.Assert(job.Config.Env, DeepEquals, []string{"FOO=baz", "JOB=true", "RELEASE=true"})
-	c.Assert(job.Config.AttachStdout, Equals, true)
-	c.Assert(job.Config.AttachStderr, Equals, true)
-	c.Assert(job.Config.AttachStdin, Equals, false)
-	c.Assert(job.Config.StdinOnce, Equals, false)
-	c.Assert(job.Config.OpenStdin, Equals, false)
+	c.Assert(job.Config.Env, DeepEquals, map[string]string{"FOO": "baz", "JOB": "true", "RELEASE": "true"})
+	c.Assert(job.Config.Stdin, Equals, false)
 }
 
 func (s *S) TestRunJobAttached(c *C) {
@@ -217,7 +202,7 @@ func (s *S) TestRunJobAttached(c *C) {
 
 	done := make(chan struct{})
 	var jobID string
-	hc.SetAttachFunc("*", func(req *host.AttachReq, wait bool) (cluster.ReadWriteCloser, func() error, error) {
+	hc.SetAttachFunc("*", func(req *host.AttachReq, wait bool) (cluster.AttachClient, error) {
 		c.Assert(wait, Equals, true)
 		c.Assert(req.JobID, Not(Equals), "")
 		c.Assert(req, DeepEquals, &host.AttachReq{
@@ -227,14 +212,17 @@ func (s *S) TestRunJobAttached(c *C) {
 			Width:  10,
 		})
 		jobID = req.JobID
-		piper, pipew := io.Pipe()
+		pipeR, pipeW := io.Pipe()
 		go func() {
-			stdin, err := ioutil.ReadAll(piper)
+			stdin, err := ioutil.ReadAll(pipeR)
 			c.Assert(err, IsNil)
 			c.Assert(string(stdin), Equals, "test in")
 			close(done)
 		}()
-		return &fakeAttachStream{strings.NewReader("test out"), pipew}, func() error { return nil }, nil
+		return cluster.NewAttachClient(struct {
+			io.Reader
+			io.WriteCloser
+		}{strings.NewReader("test out"), pipeW}), nil
 	})
 
 	s.cc.SetHostClient(hostID, hc)
@@ -272,16 +260,11 @@ func (s *S) TestRunJobAttached(c *C) {
 
 	job := s.cc.GetHost(hostID).Jobs[0]
 	c.Assert(job.ID, Equals, jobID)
-	c.Assert(job.Attributes, DeepEquals, map[string]string{
+	c.Assert(job.Metadata, DeepEquals, map[string]string{
 		"flynn-controller.app":     app.ID,
 		"flynn-controller.release": release.ID,
 	})
 	c.Assert(job.Config.Cmd, DeepEquals, []string{"foo", "bar"})
-	sort.Strings(job.Config.Env)
-	c.Assert(job.Config.Env, DeepEquals, []string{"FOO=baz", "JOB=true", "RELEASE=true"})
-	c.Assert(job.Config.AttachStdout, Equals, true)
-	c.Assert(job.Config.AttachStderr, Equals, true)
-	c.Assert(job.Config.AttachStdin, Equals, true)
-	c.Assert(job.Config.StdinOnce, Equals, true)
-	c.Assert(job.Config.OpenStdin, Equals, true)
+	c.Assert(job.Config.Env, DeepEquals, map[string]string{"FOO": "baz", "JOB": "true", "RELEASE": "true"})
+	c.Assert(job.Config.Stdin, Equals, true)
 }

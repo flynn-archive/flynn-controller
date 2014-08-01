@@ -16,52 +16,48 @@
 		},
 		{
 			"ImportPath": "github.com/coreos/go-etcd/etcd",
-			"Comment": "v0.2.0-rc1-98-gd88f477",
-			"Rev": "d88f477a542c781eb9ad18ce82b3a0b9b6e2d07e"
+			"Comment": "v0.2.0-rc1-114-g7745cfd",
+			"Rev": "7745cfd7f8e619cc9e6be450238e6253a57a227f"
 		},
 		{
 			"ImportPath": "github.com/flynn/discoverd/agent",
-			"Rev": "98fbb6a0c29a087c055734e539690d8176d14517"
+			"Rev": "d553fada2899d48e3f5bd08d896d7fee37515d55"
 		},
 		{
 			"ImportPath": "github.com/flynn/flynn-host/types",
-			"Rev": "26d417f0a304f76f7ea706f4aa282434263b80a2"
+			"Rev": "489c5e7bc39e10ffae1584ba0b12ba02bc4ca108"
 		},
 		{
 			"ImportPath": "github.com/flynn/go-discoverd",
-			"Rev": "0325ff35b2495314ea7ebfc55e4e5b4408c3b78f"
+			"Rev": "caf58fe09c28730cd76e731cabdc670bea547b9d"
 		},
 		{
 			"ImportPath": "github.com/flynn/go-dockerclient",
-			"Rev": "7293e94689ede4992e94fdcf1e1152b5947b526b"
+			"Rev": "70a6053bac9d85b17e279d1e9a5337bd3d7e035d"
 		},
 		{
 			"ImportPath": "github.com/flynn/go-flynn/attempt",
-			"Rev": "cd82333194564c6684118dfc1b8fea09d6bef30f"
+			"Rev": "0de426bf8d98544ea8203423cad7bb052d65df35"
 		},
 		{
 			"ImportPath": "github.com/flynn/go-flynn/cluster",
-			"Rev": "cd82333194564c6684118dfc1b8fea09d6bef30f"
-		},
-		{
-			"ImportPath": "github.com/flynn/go-flynn/demultiplex",
-			"Rev": "cd82333194564c6684118dfc1b8fea09d6bef30f"
+			"Rev": "0de426bf8d98544ea8203423cad7bb052d65df35"
 		},
 		{
 			"ImportPath": "github.com/flynn/go-flynn/migrate",
-			"Rev": "cd82333194564c6684118dfc1b8fea09d6bef30f"
+			"Rev": "0de426bf8d98544ea8203423cad7bb052d65df35"
 		},
 		{
 			"ImportPath": "github.com/flynn/go-flynn/pinned",
-			"Rev": "cd82333194564c6684118dfc1b8fea09d6bef30f"
+			"Rev": "0de426bf8d98544ea8203423cad7bb052d65df35"
 		},
 		{
 			"ImportPath": "github.com/flynn/go-flynn/postgres",
-			"Rev": "cd82333194564c6684118dfc1b8fea09d6bef30f"
+			"Rev": "0de426bf8d98544ea8203423cad7bb052d65df35"
 		},
 		{
 			"ImportPath": "github.com/flynn/go-flynn/resource",
-			"Rev": "cd82333194564c6684118dfc1b8fea09d6bef30f"
+			"Rev": "0de426bf8d98544ea8203423cad7bb052d65df35"
 		},
 		{
 			"ImportPath": "github.com/flynn/go-sql",
@@ -73,15 +69,15 @@
 		},
 		{
 			"ImportPath": "github.com/flynn/rpcplus",
-			"Rev": "cd680b2cd620be36cd39a58270c6a2894dd2e810"
+			"Rev": "50c419fe0d665ed5088c6aa7692454fa7784490b"
 		},
 		{
 			"ImportPath": "github.com/flynn/strowger/client",
-			"Rev": "6a493ed44d3a7e9a9c499b364080d1575e82103a"
+			"Rev": "548f4dfee532fc9414d021cc1f8b073adea30e9c"
 		},
 		{
 			"ImportPath": "github.com/flynn/strowger/types",
-			"Rev": "6a493ed44d3a7e9a9c499b364080d1575e82103a"
+			"Rev": "548f4dfee532fc9414d021cc1f8b073adea30e9c"
 		},
 		{
 			"ImportPath": "github.com/go-martini/martini",
