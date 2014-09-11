@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/flynn/flynn-controller",
+	"ImportPath": "github.com/flynn-archive/flynn-controller",
 	"GoVersion": "go1.3",
 	"Packages": [
 		"./..."
@@ -22,6 +22,22 @@
 		{
 			"ImportPath": "github.com/flynn/discoverd/agent",
 			"Rev": "98fbb6a0c29a087c055734e539690d8176d14517"
+		},
+		{
+			"ImportPath": "github.com/flynn/flynn-controller/client",
+			"Rev": "103b96295ab94906422f3f05a35ed449def912f9"
+		},
+		{
+			"ImportPath": "github.com/flynn/flynn-controller/testutils",
+			"Rev": "103b96295ab94906422f3f05a35ed449def912f9"
+		},
+		{
+			"ImportPath": "github.com/flynn/flynn-controller/types",
+			"Rev": "103b96295ab94906422f3f05a35ed449def912f9"
+		},
+		{
+			"ImportPath": "github.com/flynn/flynn-controller/utils",
+			"Rev": "103b96295ab94906422f3f05a35ed449def912f9"
 		},
 		{
 			"ImportPath": "github.com/flynn/flynn-host/types",
